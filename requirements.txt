@@ -1,0 +1,9 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.0     # ASGI server — runs your FastAPI app
+sqlalchemy==2.0.36            # ORM (talks to DB)
+pydantic-settings==2.5.2      # Settings management
+psycopg2-binary==2.9.9        # PostgreSQL driver (bridge between Python and Postgres)
+python-jose[cryptography]==3.3.0  # JWT tokens
+passlib[bcrypt]==1.7.4        # Password hashing
+alembic==1.13.3               # DB migrations (manage schema changes)
+python-multipart==0.0.9       # File uploads
