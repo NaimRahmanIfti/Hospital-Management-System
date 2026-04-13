@@ -1,9 +1,24 @@
+# requirements.txt
+# Pinned versions = reproducible builds
+# "Works on my machine" becomes "works everywhere"
+
+# ── Web framework ──────────────────────────────────────────────────
 fastapi==0.115.0
-uvicorn[standard]==0.30.0     # ASGI server — runs your FastAPI app
-sqlalchemy==2.0.36            # ORM (talks to DB)
-pydantic-settings==2.5.2      # Settings management
-psycopg2-binary==2.9.9        # PostgreSQL driver (bridge between Python and Postgres)
-python-jose[cryptography]==3.3.0  # JWT tokens
-passlib[bcrypt]==1.7.4        # Password hashing
-alembic==1.13.3               # DB migrations (manage schema changes)
-python-multipart==0.0.9       # File uploads
+uvicorn[standard]==0.30.6       # ASGI server (runs FastAPI)
+python-multipart==0.0.9         # required for form data (login endpoint)
+
+# ── Database ───────────────────────────────────────────────────────
+sqlalchemy==2.0.36              # ORM
+psycopg2-binary==2.9.9          # PostgreSQL driver
+alembic==1.13.3                 # DB migrations
+
+# ── Settings ───────────────────────────────────────────────────────
+pydantic-settings==2.5.2        # reads from .env
+
+# ── Auth ───────────────────────────────────────────────────────────
+python-jose[cryptography]==3.3.0  # JWT sign/verify
+passlib[bcrypt]==1.7.4            # password hashing
+bcrypt==4.0.1                     # pinned — 4.1+ breaks passlib
+
+# ── Validation ─────────────────────────────────────────────────────
+email-validator==2.1.0          # validates EmailStr fields in schemas

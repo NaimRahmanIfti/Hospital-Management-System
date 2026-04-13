@@ -99,12 +99,12 @@ def create_invoice(db: Session, data: InvoiceCreate) -> Invoice:
     invoice = Invoice(
         patient_id=data.patient_id,
         appointment_id=data.appointment_id,
-        due_date=data.due_date,
         notes=data.notes,
         subtotal=Decimal("0.00"),
-        tax=Decimal("0.00"),
-        discount=Decimal("0.00"),
-        total=Decimal("0.00"),
+        tax_rate=Decimal("0.00"),
+        tax_amount=Decimal("0.00"),
+        
+        total_amount=Decimal("0.00"),
     )
     db.add(invoice)
     db.flush()   # flush sends the INSERT to get invoice.id WITHOUT committing
@@ -134,8 +134,8 @@ def create_invoice(db: Session, data: InvoiceCreate) -> Invoice:
     # Step 5: compute totals server-side and update the Invoice
     subtotal, tax, total = _compute_totals(db_items)
     setattr(invoice, "subtotal", subtotal)
-    setattr(invoice, "tax", tax)
-    setattr(invoice, "total", total)
+    setattr(invoice, "tax_amount", tax)
+    setattr(invoice, "total_amount", total)
 
     db.commit()
     db.refresh(invoice)
@@ -192,9 +192,9 @@ def update_invoice(
     invoice = _load_invoice_or_404(db, invoice_id)
 
     # Cannot modify a paid invoice
-    current_payment_status = getattr(invoice, "payment_status", None)
-    current_payment_status_value = getattr(current_payment_status, "value", current_payment_status)
-    if str(current_payment_status_value).upper() == "PAID":
+    current_payment_status = getattr(invoice, "status", None)
+    current_payment_status_value = str(current_payment_status) if current_payment_status else None
+    if current_payment_status_value and "paid" in str(current_payment_status_value).lower():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot modify a paid invoice"
@@ -206,10 +206,10 @@ def update_invoice(
     if "discount" in updates:
         new_discount = Decimal(str(updates["discount"]))
         subtotal, tax, total = _compute_totals(invoice.items, new_discount)
-        setattr(invoice, "discount", new_discount)
+        pass  # discount not in model
         setattr(invoice, "subtotal", subtotal)
-        setattr(invoice, "tax", tax)
-        setattr(invoice, "total", total)
+        setattr(invoice, "tax_amount", tax)
+        setattr(invoice, "total_amount", total)
         # Remove from updates dict — already applied
         updates.pop("discount")
 

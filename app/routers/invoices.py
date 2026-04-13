@@ -152,8 +152,15 @@ def update_invoice(
     Doctors and admins only. Totals are recomputed if discount changes.
     """
     if _is_patient(current_user):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Patients cannot modify invoices"
-        )
+        from app.services import patient_service as ps
+        from typing import cast as c
+        from app.models.invoice import PaymentStatus as PS
+        patient = ps.get_patient_by_user_id(db, c(int, current_user.id))
+        if not patient:
+            raise HTTPException(status_code=403, detail='Patient profile not found')
+        inv = invoice_service.get_invoice(db, invoice_id)
+        if c(int, inv.patient_id) != c(int, patient.id):
+            raise HTTPException(status_code=403, detail='You can only pay your own invoices')
+        if data.status not in [None, PS.paid]:
+            raise HTTPException(status_code=403, detail='Patients can only mark invoices as paid')
     return invoice_service.update_invoice(db, invoice_id, data)

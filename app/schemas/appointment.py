@@ -22,7 +22,7 @@ class AppointmentCreate(AppointmentBase):
     # Here: we need both 'scheduled_at' to validate it.
     @model_validator(mode="after")
     def appointment_must_be_in_future(self) -> "AppointmentCreate":
-        if self.scheduled_at <= datetime.now():
+        if self.scheduled_at.replace(tzinfo=None) <= datetime.now():
             raise ValueError("Appointment must be scheduled in the future")
         return self
 

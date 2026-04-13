@@ -1,0 +1,44 @@
+# .dockerignore
+# Same idea as .gitignore — tells Docker what NOT to copy into the image.
+# Smaller build context = faster builds.
+
+# Python cache (regenerated automatically)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments (we install packages fresh in the container)
+venv/
+env/
+.venv/
+
+# Environment files (we pass env vars through docker-compose)
+.env
+.env.*
+
+# Test files (not needed in production image)
+tests/
+*.test.py
+test_*.py
+
+# Database files (Postgres runs in its own container)
+*.db
+*.sqlite3
+
+# Git (not needed inside container)
+.git/
+.gitignore
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+
+# Documentation
+*.md
+docs/
+
+# Alembic migration versions (include these actually — needed for migrations)
+# alembic/versions/

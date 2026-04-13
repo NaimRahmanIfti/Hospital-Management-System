@@ -1,0 +1,105 @@
+# docker-compose.yml
+#
+# docker-compose orchestrates MULTIPLE containers that work together.
+# Think of it as a conductor: it starts the DB first, then your app,
+# makes them talk to each other, and manages shared storage.
+
+version: "3.9"
+
+services:
+
+  # ── 1. PostgreSQL database ──────────────────────────────────────
+  db:
+    image: postgres:16-alpine          # official Postgres, alpine = tiny image
+    container_name: hms_postgres
+
+    environment:
+      # These become environment variables inside the Postgres container.
+      # Postgres reads them on first startup to create the DB and user.
+      POSTGRES_DB:       hms_db
+      POSTGRES_USER:     hms_user
+      POSTGRES_PASSWORD: hms_pass
+
+    volumes:
+      # Named volume: persists DB data between container restarts.
+      # Without this, all data disappears when you run "docker compose down".
+      # postgres_data is defined in the 'volumes' section at the bottom.
+      - postgres_data:/var/lib/postgresql/data
+
+    ports:
+      # HOST:CONTAINER mapping.
+      # Exposes Postgres on localhost:5432 so you can connect with
+      # DBeaver, pgAdmin desktop, or psql directly from your machine.
+      - "5432:5432"
+
+    healthcheck:
+      # Docker waits until Postgres is actually ready before starting the app.
+      # Without this, the app might start before the DB is ready → crash.
+      test: ["CMD-SHELL", "pg_isready -U hms_user -d hms_db"]
+      interval: 5s      # check every 5 seconds
+      timeout: 5s       # fail if no response in 5 seconds
+      retries: 10       # try 10 times before giving up
+
+
+  # ── 2. FastAPI application ──────────────────────────────────────
+  api:
+    build:
+      context: .           # build using Dockerfile in current directory
+      dockerfile: Dockerfile
+
+    container_name: hms_api
+
+    environment:
+      # These override values in .env (or set them if .env doesn't exist)
+      # DATABASE_URL uses 'db' as the hostname — Docker's internal DNS
+      # resolves 'db' to the postgres container's IP automatically.
+      # That's the magic of docker-compose networking.
+      DATABASE_URL:                  postgresql://hms_user:hms_pass@db:5432/hms_db
+      SECRET_KEY:                    change-this-in-production-please
+      ALGORITHM:                     HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES:   "30"
+      DEBUG:                         "True"
+
+    ports:
+      - "8000:8000"    # Your API is at http://localhost:8000
+
+    depends_on:
+      db:
+        condition: service_healthy   # wait for DB healthcheck to pass
+
+    # Auto-restart if the container crashes (e.g. unhandled exception at startup)
+    restart: unless-stopped
+
+    # Mount your code as a volume during development.
+    # Changes to Python files are reflected immediately without rebuilding.
+    # Comment this out for production (use the COPY in Dockerfile instead).
+    volumes:
+      - .:/app
+
+
+  # ── 3. pgAdmin (database GUI) ───────────────────────────────────
+  # Optional but very useful — a web UI to browse your database tables,
+  # run queries, and see exactly what's being stored.
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: hms_pgadmin
+
+    environment:
+      PGADMIN_DEFAULT_EMAIL:    admin@hospital.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+
+    ports:
+      - "5050:80"    # pgAdmin UI at http://localhost:5050
+
+    depends_on:
+      - db
+
+    restart: unless-stopped
+
+
+# ── Named volumes ─────────────────────────────────────────────────
+# Docker manages these — they persist even after containers stop.
+# "docker compose down" keeps the volume.
+# "docker compose down -v" deletes it (wipes the database).
+volumes:
+  postgres_data:

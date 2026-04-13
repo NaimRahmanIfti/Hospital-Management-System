@@ -33,7 +33,7 @@ def _check_doctor_availability(
     scheduled_at_col: Any = getattr(Appointment, "scheduled_at")
     candidates = (
         db.query(Appointment)
-        .filter_by(doctor_id=doctor_id, status=AppointmentStatus.SCHEDULED)
+        .filter_by(doctor_id=doctor_id, status=AppointmentStatus.scheduled)
         .filter(scheduled_at_col < new_end)   # broad cut: started before we end
         .all()
     )
@@ -191,7 +191,7 @@ def update_appointment(
 
     # Can't modify a completed or cancelled appointment
     appt_status = cast(AppointmentStatus, getattr(appt, "status"))
-    if appt_status in (AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED):
+    if appt_status in (AppointmentStatus.completed, AppointmentStatus.cancelled):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot modify a {appt_status.value} appointment"
@@ -234,13 +234,13 @@ def cancel_appointment(db: Session, appointment_id: int) -> Appointment:
     appt = get_appointment_by_id(db, appointment_id)
     appt_status = cast(AppointmentStatus, getattr(appt, "status"))
 
-    if appt_status == AppointmentStatus.CANCELLED:
+    if appt_status == AppointmentStatus.cancelled:
         raise HTTPException(status_code=400, detail="Appointment already cancelled")
 
-    if appt_status == AppointmentStatus.COMPLETED:
+    if appt_status == AppointmentStatus.completed:
         raise HTTPException(status_code=400, detail="Cannot cancel a completed appointment")
 
-    appt.status = cast(Any, AppointmentStatus.CANCELLED.value)
+    appt.status = cast(Any, AppointmentStatus.cancelled.value)
     db.commit()
     db.refresh(appt)
     return appt
