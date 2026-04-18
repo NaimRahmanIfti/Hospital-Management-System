@@ -7,9 +7,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.core.security import create_access_token
-from app.core.dependencies import get_current_active_user
+from app.core.dependencies import get_current_active_user, get_user_service
 from app.schemas.user import UserCreate, UserResponse, Token
-from app.services import user_service
+from app.services.user_service import UserService
 from app.models.user import User
 
 
@@ -27,7 +27,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 )
 def register(
     data: UserCreate,                      # Pydantic validates the request body
-    db: Session = Depends(get_db),         # FastAPI injects a DB session
+    user_service: UserService = Depends(get_user_service),         # FastAPI injects a DB session
 ):
     """
     Register a new user.
@@ -37,7 +37,7 @@ def register(
     - Hashes password (service)
     - Returns the new user WITHOUT the password (response_model)
     """
-    user = user_service.create_user(db, data)
+    user = user_service.create(data)
     return user
 
 
@@ -52,7 +52,7 @@ def register(
 @router.post("/login", response_model=Token)
 def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db),
+    user_service: UserService = Depends(get_user_service),
 ):
     """
     Login and receive a JWT access token.
@@ -64,7 +64,7 @@ def login(
     Returns: { access_token: "eyJ...", token_type: "bearer" }
     """
     # OAuth2PasswordRequestForm uses "username" field — we use it as email
-    user = user_service.authenticate_user(db, form_data.username, form_data.password)
+    user = user_service.authenticate(form_data.username, form_data.password)
 
     # Build the JWT payload
     # "sub" (subject) is the standard JWT claim for the user identifier

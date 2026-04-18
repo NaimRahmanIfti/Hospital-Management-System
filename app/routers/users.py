@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from typing import List
 from app.core.db import get_db
-from app.core.dependencies import get_current_active_user, require_admin
+from app.core.dependencies import get_current_active_user, require_admin, get_user_service
 from app.schemas.user import UserResponse, UserUpdate
-from app.services import user_service
+from app.services.user_service import UserService
 from app.models.user import User
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -17,22 +17,21 @@ router = APIRouter(prefix="/users", tags=["Users"])
 def list_users(
     skip: int = 0,                             # pagination: how many to skip
     limit: int = 20,                           # pagination: max to return
-    db: Session = Depends(get_db),
+    user_service: UserService = Depends(get_user_service),
     _: User = Depends(require_admin),          # _ = we need the check, not the value
 ):
     """
     List all users. Admin only.
     Use skip/limit for pagination: skip=20&limit=20 → page 2.
     """
-    users = db.query(User).offset(skip).limit(limit).all()
-    return users
+    return user_service.get_all(skip, limit)
 
 
 # ── GET /users/{user_id} ──────────────────────────────────────────
 @router.get("/{user_id}", response_model=UserResponse)
 def get_user(
     user_id: int,
-    db: Session = Depends(get_db),
+    user_service: UserService = Depends(get_user_service),
     current_user: User = Depends(get_current_active_user),
 ):
     """
@@ -50,7 +49,7 @@ def get_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only view your own profile"
         )
-    return user_service.get_user_by_id(db, user_id)
+    return user_service.get_by_id(user_id)
 
 
 # ── PATCH /users/{user_id} ────────────────────────────────────────
@@ -61,7 +60,7 @@ def get_user(
 def update_user(
     user_id: int,
     data: UserUpdate,
-    db: Session = Depends(get_db),
+    user_service: UserService = Depends(get_user_service),
     current_user: User = Depends(get_current_active_user),
 ):
     """
@@ -77,14 +76,14 @@ def update_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only update your own profile"
         )
-    return user_service.update_user(db, user_id, data)
+    return user_service.update(user_id, data)
 
 
 # ── DELETE /users/{user_id} (soft delete) ────────────────────────
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def deactivate_user(
     user_id: int,
-    db: Session = Depends(get_db),
+    user_service: UserService = Depends(get_user_service),
     _: User = Depends(require_admin),
 ):
     """
@@ -92,4 +91,4 @@ def deactivate_user(
     Sets is_active=False — does NOT delete the row.
     204 = success with no response body.
     """
-    user_service.deactivate_user(db, user_id)
+    user_service.deactivate(user_id)

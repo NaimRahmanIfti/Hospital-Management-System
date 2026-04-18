@@ -7,6 +7,13 @@ from app.core.db import get_db
 from app.core.security import decode_access_token
 from app.models.user import User
 
+from app.services.user_service import UserService
+from app.services.patient_service import PatientService
+from app.services.doctor_service import DoctorService
+from app.services.appointment_service import AppointmentService
+from app.services.medical_record_service import MedicalRecordService
+from app.services.invoice_service import InvoiceService
+
 
 # ── OAuth2 Scheme ─────────────────────────────────────────────────
 # OAuth2PasswordBearer tells FastAPI:
@@ -127,3 +134,28 @@ def require_patient(
             detail="Patient access required"
         )
     return current_user
+
+
+# ── Service dependencies ──────────────────────────────────────────
+def get_user_service(db: Session = Depends(get_db)) -> UserService:
+    return UserService(db)
+
+
+def get_patient_service(db: Session = Depends(get_db)) -> PatientService:
+    return PatientService(db)
+
+
+def get_doctor_service(db: Session = Depends(get_db)) -> DoctorService:
+    return DoctorService(db)
+
+
+def get_appointment_service(db: Session = Depends(get_db)) -> AppointmentService:
+    return AppointmentService(db)
+
+
+def get_medical_record_service(db: Session = Depends(get_db)) -> MedicalRecordService:
+    return MedicalRecordService(db)
+
+
+def get_invoice_service(db: Session = Depends(get_db)) -> InvoiceService:
+    return InvoiceService(db)

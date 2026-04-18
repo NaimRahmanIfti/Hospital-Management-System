@@ -25,5 +25,21 @@ class User(Base):
     patient_profile = relationship("Patient", back_populates="user", uselist=False)
     doctor_profile  = relationship("Doctor",  back_populates="user", uselist=False)
 
+    @property
+    def display_name(self) -> str:
+        return f"{self.full_name} ({self.role.value})"
+
+    @property
+    def is_admin(self) -> bool:
+        return self.role == UserRole.admin
+
+    @property
+    def is_doctor(self) -> bool:
+        return self.role == UserRole.doctor
+
+    @property
+    def is_patient(self) -> bool:
+        return self.role == UserRole.patient
+
     def __repr__(self):
         return f"<User id={self.id} email={self.email} role={self.role}>"
