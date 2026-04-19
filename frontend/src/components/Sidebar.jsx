@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom"
 import { motion } from "framer-motion"
 import useAuthStore from "../store/authstore"
 
+
 export default function Sidebar() {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
@@ -34,7 +35,7 @@ export default function Sidebar() {
     <aside className="w-64 min-h-screen bg-white border-r border-gray-100 flex flex-col">
 
       {/* Logo */}
-      <div className="h-16 flex items-center gap-3 px-6 border-b border-gray-100">
+      <div onClick={() => navigate("/")} className="h-16 flex items-center gap-3 px-6 border-b border-gray-100">
         <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-teal-700 rounded-lg flex items-center justify-center shadow-sm">
           <span className="text-white font-bold text-sm">N</span>
         </div>
