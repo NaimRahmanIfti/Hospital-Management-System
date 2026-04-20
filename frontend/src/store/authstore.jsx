@@ -1,6 +1,6 @@
 // src/store/authStore.js
 import { create } from "zustand"
-import { authAPI } from "../api/client"
+import api, { authAPI } from "../api/client"
 
 const useAuthStore = create((set) => ({
   token:   localStorage.getItem("hms_token") || null,
@@ -17,6 +17,16 @@ const useAuthStore = create((set) => ({
       const { data: user } = await authAPI.me()
       localStorage.setItem("hms_user", JSON.stringify(user))
       set({ token, user, loading: false })
+
+      // Ensure patient profile exists — creates it if missing, ignores 409 if it already does
+      if (user.role === "patient") {
+        try {
+          await api.post("/patients/", { user_id: user.id })
+        } catch (e) {
+          if (e.response?.status !== 409) console.warn("Patient profile check:", e.message)
+        }
+      }
+
       return { success: true, user }
     } catch (err) {
       const msg = err.response?.data?.detail || "Login failed"

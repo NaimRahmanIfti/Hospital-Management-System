@@ -43,12 +43,13 @@ def register(
 
     # Auto-create profile so the user is immediately usable after registration
     if cast(UserRole, user.role) == UserRole.patient:
+        import logging
         from app.schemas.patient import PatientCreate
         from app.services.patient_service import PatientService
         try:
             PatientService(db).create_profile(PatientCreate(user_id=cast(int, user.id)))
-        except Exception:
-            pass  # duplicate or constraint error — profile may already exist
+        except Exception as _e:
+            logging.warning("Auto patient-profile creation failed for user %s: %s", user.id, _e)
 
     return user
 

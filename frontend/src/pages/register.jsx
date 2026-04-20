@@ -77,7 +77,7 @@ export default function Register() {
         "Authorization": `Bearer ${token}`,
       }
 
-      // Step 3 — Create profile (don't fail registration if this fails)
+      // Step 3 — Create profile
       if (form.role === "patient") {
         try {
           const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8000"}/patients/`, {
@@ -86,11 +86,14 @@ export default function Register() {
           })
           if (!res.ok) {
             const errData = await res.json()
-            console.warn("Patient profile error:", errData)
-            // Profile might already exist — that's fine
+            // 409 = profile already created server-side — that's fine
+            if (res.status !== 409) {
+              console.error("Patient profile error:", errData)
+              setError(`Account created but profile setup failed: ${errData.detail || "Unknown error"}. Please contact support.`)
+            }
           }
         } catch (profileErr) {
-          console.warn("Patient profile creation failed:", profileErr)
+          console.error("Patient profile creation failed:", profileErr)
         }
       }
 
@@ -107,10 +110,13 @@ export default function Register() {
           })
           if (!res.ok) {
             const errData = await res.json()
-            console.warn("Doctor profile error:", errData)
+            if (res.status !== 409) {
+              console.error("Doctor profile error:", errData)
+              setError(`Account created but doctor profile setup failed: ${errData.detail || "Unknown error"}. Please contact support.`)
+            }
           }
         } catch (profileErr) {
-          console.warn("Doctor profile creation failed:", profileErr)
+          console.error("Doctor profile creation failed:", profileErr)
         }
       }
 
