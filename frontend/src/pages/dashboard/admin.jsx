@@ -340,27 +340,14 @@ function CreateUserModal({ onClose, onCreated }) {
         password:  form.password,
         role:      form.role,
       })
-      const loginRes = await authAPI.login(form.email, form.password)
-      const token = loginRes.data.access_token
-      const headers = {
-        "Content-Type":  "application/json",
-        "Authorization": `Bearer ${token}`,
-      }
-      if (form.role === "patient") {
-        await fetch("http://localhost:8000/patients/", {
-          method: "POST", headers,
-          body: JSON.stringify({ user_id: newUser.id }),
-        })
-      }
+      // Patient profile is auto-created on registration.
+      // Doctor profile must be created explicitly with admin token.
       if (form.role === "doctor") {
-        await fetch("http://localhost:8000/doctors/", {
-          method: "POST", headers,
-          body: JSON.stringify({
-            user_id:          newUser.id,
-            specialization:   form.specialization,
-            license_number:   form.license_number || `LIC-${Date.now()}`,
-            consultation_fee: form.consultation_fee,
-          }),
+        await api.post("/doctors/", {
+          user_id:          newUser.id,
+          specialization:   form.specialization,
+          license_number:   form.license_number || `LIC-${Date.now()}`,
+          consultation_fee: Number(form.consultation_fee),
         })
       }
       setSuccess(`✅ ${form.role} account created for ${form.full_name}`)
