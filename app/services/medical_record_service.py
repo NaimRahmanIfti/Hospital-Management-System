@@ -17,10 +17,18 @@ from app.core.services import BaseService
 from datetime import datetime, timezone
 
 
-class MedicalRecordService(BaseService):
+class MedicalRecordService:
     """
     Service class for medical record-related business logic.
     """
+    def __init__(self, db):
+        self._db = db
+
+    def commit(self):
+        self._db.commit()
+
+    def refresh(self, obj):
+        self._db.refresh(obj)
 
     def _load_record_or_404(self, record_id: int) -> MedicalRecord:
         record = (
@@ -186,3 +194,35 @@ class MedicalRecordService(BaseService):
         self.commit()
         self.refresh(lab)
         return lab
+
+
+# Module-level wrappers for router compatibility
+def get_records_for_patient(db, patient_id):
+    return MedicalRecordService(db).get_records_for_patient(patient_id)
+
+def get_records_for_doctor(db, doctor_id):
+    return MedicalRecordService(db).get_records_by_doctor(doctor_id)
+
+def get_records_by_doctor(db, doctor_id):
+    return MedicalRecordService(db).get_records_by_doctor(doctor_id)
+
+def get_medical_record(db, record_id):
+    return MedicalRecordService(db).get_record(record_id)
+
+def create_medical_record(db, data, requesting_doctor_id):
+    return MedicalRecordService(db).create_record(data, requesting_doctor_id)
+
+def update_medical_record(db, record_id, data, requesting_doctor_id):
+    return MedicalRecordService(db).update_record(record_id, data, requesting_doctor_id)
+
+def add_prescription(db, data, requesting_doctor_id):
+    return MedicalRecordService(db).add_prescription(data, requesting_doctor_id)
+
+def update_prescription(db, prescription_id, data, requesting_doctor_id):
+    return MedicalRecordService(db).update_prescription(prescription_id, data, requesting_doctor_id)
+
+def order_lab_test(db, data, requesting_doctor_id):
+    return MedicalRecordService(db).order_lab_test(data, requesting_doctor_id)
+
+def update_lab_result(db, lab_id, data, requesting_doctor_id):
+    return MedicalRecordService(db).update_lab_result(lab_id, data, requesting_doctor_id)

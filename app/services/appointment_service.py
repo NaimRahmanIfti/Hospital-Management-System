@@ -3,6 +3,7 @@
 from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException, status
 from datetime import datetime, timedelta
+from decimal import Decimal
 from typing import Any, cast
 from app.models.appointment import Appointment, AppointmentStatus
 from app.models.doctor import Doctor
@@ -11,10 +12,18 @@ from app.schemas.appointment import AppointmentCreate, AppointmentUpdate
 from app.core.services import BaseService
 
 
-class AppointmentService(BaseService):
+class AppointmentService:
     """
     Service class for appointment-related business logic.
     """
+    def __init__(self, db):
+        self._db = db
+
+    def commit(self):
+        self._db.commit()
+
+    def refresh(self, obj):
+        self._db.refresh(obj)
 
     def _check_doctor_availability(
         self,
@@ -224,7 +233,43 @@ class AppointmentService(BaseService):
 
         self.commit()
         self.refresh(appt)
+
+        # Auto-create invoice when appointment is marked completed
+        new_status_raw = updates.get("status")
+        new_status_str = str(getattr(new_status_raw, "value", new_status_raw)).lower() if new_status_raw else None
+        if new_status_str == "completed":
+            self._auto_create_invoice(appt)
+
         return appt
+
+    def _auto_create_invoice(self, appt: Appointment) -> None:
+        """Create a consultation invoice when an appointment is completed, if one doesn't exist yet."""
+        from app.models.invoice import Invoice
+        from app.schemas.invoice import InvoiceCreate, InvoiceItemCreate
+        from app.services.invoice_service import InvoiceService
+
+        appt_id = cast(int, getattr(appt, "id"))
+        existing = self._db.query(Invoice).filter(Invoice.appointment_id == appt_id).first()
+        if existing:
+            return  # invoice already exists, nothing to do
+
+        doctor = self._db.query(Doctor).filter(Doctor.id == appt.doctor_id).first()
+        fee = float(doctor.consultation_fee) if doctor and doctor.consultation_fee else 0.0
+        description = f"Consultation - {doctor.specialization}" if doctor else "Consultation"
+
+        invoice_data = InvoiceCreate(
+            patient_id=cast(int, getattr(appt, "patient_id")),
+            appointment_id=appt_id,
+            items=[InvoiceItemCreate(
+                description=description,
+                quantity=1,
+                unit_price=Decimal(str(fee)),
+            )]
+        )
+        try:
+            InvoiceService(self._db).create_invoice(invoice_data)
+        except Exception:
+            pass  # invoice creation failure should not roll back the appointment update
 
     def cancel(self, appointment_id: int) -> Appointment:
         """Convenience method — sets status to cancelled."""
@@ -241,3 +286,26 @@ class AppointmentService(BaseService):
         self.commit()
         self.refresh(appt)
         return appt
+
+
+# Module-level wrappers for router compatibility
+def get_appointments_for_patient(db, patient_id, status_filter=None):
+    return AppointmentService(db).get_for_patient(patient_id, status_filter)
+
+def get_appointments_for_doctor(db, doctor_id, date=None, status_filter=None):
+    return AppointmentService(db).get_for_doctor(doctor_id, date, status_filter)
+
+def get_appointment(db, appointment_id):
+    return AppointmentService(db).get_by_id(appointment_id)
+
+def get_appointment_by_id(db, appointment_id):
+    return AppointmentService(db).get_by_id(appointment_id)
+
+def book_appointment(db, data):
+    return AppointmentService(db).book(data)
+
+def update_appointment(db, appointment_id, data, requesting_user_id):
+    return AppointmentService(db).update(appointment_id, data, requesting_user_id)
+
+def cancel_appointment(db, appointment_id):
+    return AppointmentService(db).cancel(appointment_id)

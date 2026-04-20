@@ -8,10 +8,19 @@ from app.schemas.doctor import DoctorCreate, DoctorUpdate
 from app.core.services import BaseService
 
 
-class DoctorService(BaseService):
+class DoctorService:
     """
     Service class for doctor-related business logic.
     """
+
+    def __init__(self, db):
+        self._db = db
+
+    def commit(self):
+        self._db.commit()
+
+    def refresh(self, obj):
+        self._db.refresh(obj)
 
     def get_by_id(self, doctor_id: int) -> Doctor:
         doctor = (
@@ -65,7 +74,7 @@ class DoctorService(BaseService):
         else:
             user_role = str(role_raw)
 
-        if str(user_role).lower() != "doctor":
+        if str(user_role).lower().replace('userrole.', '') != "doctor":
             raise HTTPException(
                 status_code=400,
                 detail=f"User role is '{user_role}', expected 'doctor'"
@@ -98,3 +107,32 @@ class DoctorService(BaseService):
         self.commit()
         self.refresh(doctor)
         return doctor
+
+
+# Module-level wrappers for router compatibility
+def get_doctor_by_user_id(db, user_id):
+    return DoctorService(db).get_by_user_id(user_id)
+
+def get_doctor(db, doctor_id):
+    return DoctorService(db).get_by_id(doctor_id)
+
+def get_doctor_by_id(db, doctor_id):
+    return DoctorService(db).get_by_id(doctor_id)
+
+def get_all_doctors(db, skip=0, limit=100, specialization=None):
+    return DoctorService(db).get_all(skip, limit, specialization)
+
+def get_doctors(db, skip=0, limit=100, specialization=None):
+    return DoctorService(db).get_all(skip, limit, specialization)
+
+def create_doctor(db, data):
+    return DoctorService(db).create_profile(data)
+
+def create_doctor_profile(db, data):
+    return DoctorService(db).create_profile(data)
+
+def update_doctor(db, doctor_id, data):
+    return DoctorService(db).update_profile(doctor_id, data)
+
+def update_doctor_profile(db, doctor_id, data):
+    return DoctorService(db).update_profile(doctor_id, data)

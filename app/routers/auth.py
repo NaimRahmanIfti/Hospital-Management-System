@@ -10,7 +10,7 @@ from app.core.security import create_access_token
 from app.core.dependencies import get_current_active_user, get_user_service
 from app.schemas.user import UserCreate, UserResponse, Token
 from app.services.user_service import UserService
-from app.models.user import User
+from app.models.user import User, UserRole
 
 
 # APIRouter is like a mini FastAPI app — it groups related routes.
@@ -26,8 +26,9 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
     status_code=status.HTTP_201_CREATED,   # 201 = resource created (not 200)
 )
 def register(
-    data: UserCreate,                      # Pydantic validates the request body
-    user_service: UserService = Depends(get_user_service),         # FastAPI injects a DB session
+    data: UserCreate,
+    db: Session = Depends(get_db),
+    user_service: UserService = Depends(get_user_service),
 ):
     """
     Register a new user.
@@ -36,8 +37,19 @@ def register(
     - Checks email isn't already taken (service)
     - Hashes password (service)
     - Returns the new user WITHOUT the password (response_model)
+    - Auto-creates Patient profile if role=patient
     """
     user = user_service.create(data)
+
+    # Auto-create profile so the user is immediately usable after registration
+    if cast(UserRole, user.role) == UserRole.patient:
+        from app.schemas.patient import PatientCreate
+        from app.services.patient_service import PatientService
+        try:
+            PatientService(db).create_profile(PatientCreate(user_id=cast(int, user.id)))
+        except Exception:
+            pass  # duplicate or constraint error — profile may already exist
+
     return user
 
 

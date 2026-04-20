@@ -10,10 +10,20 @@ from app.schemas.invoice import InvoiceCreate, InvoiceUpdate
 from app.core.services import BaseService
 
 
-class InvoiceService(BaseService):
+class InvoiceService:
     """
     Service class for invoice-related business logic.
     """
+    def __init__(self, db):
+        self._db = db
+
+    def commit(self):
+        self._db.commit()
+
+    def refresh(self, obj):
+        self._db.refresh(obj)
+
+
 
     # Tax rate — in a real system this would be configurable per location
     TAX_RATE = Decimal("0.08")   # 8%
@@ -218,3 +228,22 @@ class InvoiceService(BaseService):
         self.commit()
         self.refresh(invoice)
         return self._load_invoice_or_404(invoice_id)
+
+# Function wrappers for router compatibility
+
+
+# Function wrappers for router compatibility
+def get_all_invoices(db, skip=0, limit=100, status_filter=None):
+    return InvoiceService(db).get_all_invoices(skip, limit, status_filter)
+
+def get_invoice(db, invoice_id):
+    return InvoiceService(db).get_invoice(invoice_id)
+
+def get_invoices_for_patient(db, patient_id):
+    return InvoiceService(db).get_invoices_for_patient(patient_id)
+
+def create_invoice(db, data):
+    return InvoiceService(db).create_invoice(data)
+
+def update_invoice(db, invoice_id, data):
+    return InvoiceService(db).update_invoice(invoice_id, data)

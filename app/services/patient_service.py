@@ -10,10 +10,18 @@ from app.schemas.patient import PatientCreate, PatientUpdate
 from app.core.services import BaseService
 
 
-class PatientService(BaseService):
+class PatientService:
     """
     Service class for patient-related business logic.
     """
+    def __init__(self, db):
+        self._db = db
+
+    def commit(self):
+        self._db.commit()
+
+    def refresh(self, obj):
+        self._db.refresh(obj)
 
     def get_by_id(self, patient_id: int) -> Patient:
         """
@@ -72,7 +80,7 @@ class PatientService(BaseService):
             )
 
         # Rule 2: must be a patient role
-        if cast(UserRole, user.role) != UserRole.PATIENT:
+        if str(user.role).lower().replace('userrole.', '') != 'patient':
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"User has role '{user.role.value}', not 'patient'"
@@ -102,3 +110,29 @@ class PatientService(BaseService):
         self.commit()
         self.refresh(patient)
         return patient
+
+
+# Module-level wrappers for router compatibility
+def get_patient_by_user_id(db, user_id):
+    return PatientService(db).get_by_user_id(user_id)
+
+def get_patient(db, patient_id):
+    return PatientService(db).get_by_id(patient_id)
+
+def get_patient_by_id(db, patient_id):
+    return PatientService(db).get_by_id(patient_id)
+
+def get_all_patients(db, skip=0, limit=100):
+    return PatientService(db).get_all(skip, limit)
+
+def create_patient(db, data):
+    return PatientService(db).create_profile(data)
+
+def create_patient_profile(db, data):
+    return PatientService(db).create_profile(data)
+
+def update_patient(db, patient_id, data):
+    return PatientService(db).update_profile(patient_id, data)
+
+def update_patient_profile(db, patient_id, data):
+    return PatientService(db).update_profile(patient_id, data)

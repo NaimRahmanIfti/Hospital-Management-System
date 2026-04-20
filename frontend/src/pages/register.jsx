@@ -80,7 +80,7 @@ export default function Register() {
       // Step 3 — Create profile (don't fail registration if this fails)
       if (form.role === "patient") {
         try {
-          const res = await fetch("http://localhost:8000/patients/", {
+          const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8000"}/patients/`, {
             method: "POST", headers,
             body: JSON.stringify({ user_id: newUser.id }),
           })
@@ -96,7 +96,7 @@ export default function Register() {
 
       if (form.role === "doctor") {
         try {
-          const res = await fetch("http://localhost:8000/doctors/", {
+          const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8000"}/doctors/`, {
             method: "POST", headers,
             body: JSON.stringify({
               user_id:          newUser.id,
@@ -116,7 +116,7 @@ export default function Register() {
 
       // Step 4 — Re-fetch user to make sure role is correct in store
       try {
-        const meRes = await fetch("http://localhost:8000/auth/me", { headers })
+        const meRes = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:8000"}/auth/me`, { headers })
         const meData = await meRes.json()
         localStorage.setItem("hms_user", JSON.stringify(meData))
       } catch(e) { console.warn("Could not refresh user data") }

@@ -43,6 +43,16 @@ def create_patient(
         data.user_id = current_user.id
     return patient_service.create_patient_profile(db, data)
 
+@router.get("/my")
+def get_my_patient_profile(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    from app.models.patient import Patient
+    patient = db.query(Patient).filter(Patient.user_id == current_user.id).first()
+    if not patient:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Patient profile not found")
+    return patient
+
+
 
 @router.get("/{patient_id}", response_model=PatientResponse)
 def get_patient(

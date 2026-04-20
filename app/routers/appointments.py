@@ -80,7 +80,7 @@ def book_appointment(
 
     appt = appointment_service.book_appointment(db, payload)
     # Reload with relationships for the response
-    appt = appointment_service.get_appointment_by_id(db, _as_int(appt.id))
+    appt = appointment_service.get_appointment(db, _as_int(appt.id))
     return _build_appointment_response(appt)
 
 
@@ -130,7 +130,7 @@ def get_appointment(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    appt = appointment_service.get_appointment_by_id(db, appointment_id)
+    appt = appointment_service.get_appointment(db, appointment_id)
 
     # Authorization: patient can only see their own, doctor can only see theirs
     if _has_role(current_user.role, "patient"):
@@ -160,7 +160,7 @@ def update_appointment(
     - Doctors can complete, add notes, change room.
     - Admins can do anything.
     """
-    appt = appointment_service.get_appointment_by_id(db, appointment_id)
+    appt = appointment_service.get_appointment(db, appointment_id)
 
     # Patients: can only touch their own, and only to cancel
     if _has_role(current_user.role, "patient"):
@@ -191,7 +191,7 @@ def update_appointment(
     updated = appointment_service.update_appointment(
         db, appointment_id, data, _as_int(current_user.id)
     )
-    updated = appointment_service.get_appointment_by_id(db, _as_int(updated.id))
+    updated = appointment_service.get_appointment(db, _as_int(updated.id))
     return _build_appointment_response(updated)
 
 
@@ -203,7 +203,7 @@ def cancel_appointment(
     current_user: User = Depends(get_current_active_user),
 ):
     """Cancel an appointment. Patients cancel their own; admins cancel any."""
-    appt = appointment_service.get_appointment_by_id(db, appointment_id)
+    appt = appointment_service.get_appointment(db, appointment_id)
 
     if _has_role(current_user.role, "patient"):
         profile = patient_service.get_patient_by_user_id(db, _as_int(current_user.id))
