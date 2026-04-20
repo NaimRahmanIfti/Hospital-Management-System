@@ -236,7 +236,7 @@ export default function Invoices() {
   const loadInvoices = async () => {
     try {
       let data = []
-      if (user?.role === "admin") {
+      if (user?.role === "admin" || user?.role === "doctor") {
         const r = await api.get("/invoices/")
         data = r.data || []
       } else if (user?.role === "patient") {
@@ -252,17 +252,6 @@ export default function Invoices() {
   }
 
   useEffect(() => { loadInvoices() }, [user])
-
-  if (user?.role === "doctor") {
-    return (
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Invoices</h1>
-        <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center text-gray-400 text-sm">
-          Invoices are managed by admin and visible to patients.
-        </div>
-      </div>
-    )
-  }
 
   const total = invoices.reduce((s, i) => s + Number(i.total_amount || 0), 0)
   const paid  = invoices

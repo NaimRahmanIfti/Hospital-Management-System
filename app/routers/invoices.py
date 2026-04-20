@@ -20,11 +20,11 @@ def _parse_payment_status(payment_status: Optional[str]) -> Optional[str]:
     if payment_status is None:
         return None
 
-    allowed_statuses = {"pending", "paid", "partially_paid", "overdue", "cancelled"}
+    allowed_statuses = {"pending", "paid", "partial", "overdue", "waived"}
     if payment_status not in allowed_statuses:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Invalid payment_status: {payment_status}"
+            detail=f"Invalid status: '{payment_status}'. Allowed: {sorted(allowed_statuses)}"
         )
     return payment_status
 
@@ -49,16 +49,18 @@ def create_invoice(
     return invoice_service.create_invoice(db, data)
 
 
-# ── GET /invoices (admin only) ────────────────────────────────────
+# ── GET /invoices (admin + doctor) ───────────────────────────────
 @router.get("/", response_model=List[InvoiceResponse])
 def list_all_invoices(
     skip: int = 0,
     limit: int = 20,
     payment_status: Optional[str] = Query(None),
     db: Session = Depends(get_db),
-    _: User = Depends(require_admin),
+    current_user: User = Depends(get_current_active_user),
 ):
-    """List all invoices. Admin only. Filter by payment status."""
+    """List all invoices. Admin and doctors only. Filter by payment status."""
+    if _is_patient(current_user):
+        raise HTTPException(status_code=403, detail="Patients cannot list all invoices")
     status_filter = _parse_payment_status(payment_status)
     return invoice_service.get_all_invoices(db, skip, limit, status_filter)
 

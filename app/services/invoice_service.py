@@ -169,7 +169,7 @@ class InvoiceService:
             .filter(Invoice.patient_id == patient_id)
         )
         if status_filter:
-            query = query.filter_by(payment_status=status_filter)
+            query = query.filter(Invoice.status == status_filter)
         return query.order_by(Invoice.created_at.desc()).all()
 
     def get_all_invoices(
@@ -186,7 +186,7 @@ class InvoiceService:
             )
         )
         if status_filter:
-            query = query.filter_by(payment_status=status_filter)
+            query = query.filter(Invoice.status == status_filter)
         return query.order_by(Invoice.created_at.desc()).offset(skip).limit(limit).all()
 
     def update_invoice(

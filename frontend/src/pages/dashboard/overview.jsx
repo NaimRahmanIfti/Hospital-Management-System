@@ -46,7 +46,7 @@ export default function Overview() {
             results.invoices = r.data?.length || 0
           } else if (user?.role === "patient") {
             const r = await invoiceAPI.myInvoices()
-            results.invoices = r.data?.filter(i => i.payment_status === "pending").length || 0
+            results.invoices = r.data?.filter(i => i.status === "pending").length || 0
           }
         } catch(e) { results.invoices = 0 }
 

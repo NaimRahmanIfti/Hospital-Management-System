@@ -32,8 +32,19 @@ def list_doctors(
 def create_doctor(
     data: DoctorCreate,
     db: Session = Depends(get_db),
-    _: User = Depends(require_admin),   # only admin can create doctor profiles
+    current_user: User = Depends(get_current_active_user),
 ):
+    """
+    Admin can create a doctor profile for any user.
+    A doctor-role user can create their own profile (user_id must match).
+    """
+    from fastapi import HTTPException
+    from app.models.user import UserRole
+    role_val = str(getattr(current_user.role, "value", current_user.role)).lower()
+    if role_val == "patient":
+        raise HTTPException(status_code=403, detail="Patients cannot create doctor profiles")
+    if role_val == "doctor" and int(current_user.id) != int(data.user_id):
+        raise HTTPException(status_code=403, detail="Doctors can only create their own profile")
     return doctor_service.create_doctor_profile(db, data)
 
 
