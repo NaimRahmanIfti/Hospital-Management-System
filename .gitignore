@@ -14,3 +14,7 @@ dist/
 # Local dev files (uploads go to S3 in production)
 uploads/
 *.db
+
+# Test coverage output
+.coverage
+htmlcov/
