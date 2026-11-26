@@ -161,12 +161,20 @@ def test_filter_invoices_by_status(client, doctor, patient):
     assert client.get("/invoices/", headers=doctor.headers, params={"payment_status": "bogus"}).status_code == 422
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="KNOWN SECURITY BUG: a patient can send {'discount': ...} on their own invoice "
-           "and lower the total. The router only checks 'status'. Fix it, then delete this marker.",
-)
 def test_patient_cannot_discount_own_invoice(client, doctor, patient):
     inv_id = create_invoice(client, doctor, patient).json()["id"]
     r = client.patch(f"/invoices/{inv_id}", headers=patient.headers, json={"discount": "150.00"})
     assert r.status_code == 403
+    # Sneaking the discount in next to a valid "paid" status must fail too
+    r = client.patch(f"/invoices/{inv_id}", headers=patient.headers, json={"status": "paid", "discount": "150.00"})
+    assert r.status_code == 403
+    # And the bill is unchanged
+    assert Decimal(client.get(f"/invoices/{inv_id}", headers=patient.headers).json()["total_amount"]) == Decimal("162.00")
+
+
+def test_doctor_can_apply_discount(client, doctor, patient):
+    inv_id = create_invoice(client, doctor, patient).json()["id"]
+    r = client.patch(f"/invoices/{inv_id}", headers=doctor.headers, json={"discount": "50.00"})
+    assert r.status_code == 200
+    # (150 - 50) = 100, + 8% tax = 108.00
+    assert Decimal(r.json()["total_amount"]) == Decimal("108.00")
