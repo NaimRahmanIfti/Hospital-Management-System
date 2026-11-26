@@ -7,7 +7,7 @@ from app.core.config import settings
 from app.core.db import Base
 import app.models  # noqa - registers all models
 
-from app.routers import auth, users, patients, doctors, appointments, medical_records, invoices
+from app.routers import auth, users, patients, doctors, appointments, medical_records, invoices, documents
 
 # ── Database ──────────────────────────────────────────────────────
 from sqlalchemy import create_engine
@@ -49,6 +49,7 @@ app.include_router(doctors.router)
 app.include_router(appointments.router)
 app.include_router(medical_records.router)
 app.include_router(invoices.router)
+app.include_router(documents.router)
 
 @app.get("/", tags=["System"])
 def root():

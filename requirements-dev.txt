@@ -1,0 +1,5 @@
+# requirements-dev.txt — only needed to run tests, NOT shipped in the Docker image.
+# Install with:  pip install -r requirements.txt -r requirements-dev.txt
+pytest==8.3.3
+httpx==0.27.2                   # FastAPI's TestClient uses it
+moto[s3]==5.0.16                # fakes AWS in memory → test S3 code for free

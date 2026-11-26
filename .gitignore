@@ -11,3 +11,6 @@ venv/
 *.egg-info/
 dist/
 .pytest_cache/
+# Local dev files (uploads go to S3 in production)
+uploads/
+*.db
