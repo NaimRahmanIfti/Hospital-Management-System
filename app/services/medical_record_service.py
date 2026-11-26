@@ -78,7 +78,13 @@ class MedicalRecordService:
             if existing:
                 raise HTTPException(status_code=409, detail=f"A medical record already exists for appointment {data.appointment_id}")
 
-        record = MedicalRecord(**data.model_dump())
+        # The author is the doctor the ROUTER verified (from the JWT), not
+        # whatever doctor_id the client typed. Otherwise doctor A could write
+        # records signed as doctor B (found by pytest).
+        record = MedicalRecord(
+            **data.model_dump(exclude={"doctor_id"}),
+            doctor_id=requesting_doctor_id,
+        )
         self._db.add(record)
         self.commit()
         self.refresh(record)

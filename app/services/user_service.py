@@ -136,5 +136,16 @@ class UserService(BaseService):
         self.refresh(user)
         return user
 
+    def deactivate(self, user_id: int) -> None:
+        """
+        Soft delete: set is_active=False instead of deleting the row.
+        Medical history must be kept, and old tokens stop working because
+        get_current_active_user checks is_active on every request.
+        (DELETE /users/{id} called this method, but it didn't exist → 500 error.)
+        """
+        user = self.get_by_id(user_id)
+        user.is_active = False
+        self.commit()
+
     def get_all(self, skip: int = 0, limit: int = 20) -> list[User]:
         return self._db.query(User).offset(skip).limit(limit).all()

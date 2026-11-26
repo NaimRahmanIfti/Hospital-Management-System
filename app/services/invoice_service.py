@@ -239,8 +239,10 @@ def get_all_invoices(db, skip=0, limit=100, status_filter=None):
 def get_invoice(db, invoice_id):
     return InvoiceService(db).get_invoice(invoice_id)
 
-def get_invoices_for_patient(db, patient_id):
-    return InvoiceService(db).get_invoices_for_patient(patient_id)
+def get_invoices_for_patient(db, patient_id, status_filter=None):
+    # The routers pass a status filter as a 3rd argument. Without this
+    # parameter, GET /invoices/my crashed with a 500 error (found by pytest).
+    return InvoiceService(db).get_invoices_for_patient(patient_id, status_filter)
 
 def create_invoice(db, data):
     return InvoiceService(db).create_invoice(data)
