@@ -10,3 +10,4 @@ from app.models.medical_record import MedicalRecord
 from app.models.prescription   import Prescription
 from app.models.lab_result     import LabResult, LabStatus
 from app.models.invoice        import Invoice, InvoiceItem, PaymentStatus
+from app.models.document       import MedicalDocument

@@ -40,6 +40,32 @@ class Settings(BaseSettings):
     # After this, the user must log in again.
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    # ── File storage (AWS S3) ─────────────────────────────────────────
+    # STORAGE_BACKEND picks WHERE uploaded files (lab reports, scans) go:
+    #   "local" → a folder on disk. Good for development, no AWS needed.
+    #   "s3"    → an Amazon S3 bucket. Used in production on AWS.
+    # The rest of the code never checks this value itself — it asks
+    # app/core/storage.py for "the storage", and gets the right one.
+    STORAGE_BACKEND: str = "local"
+    LOCAL_STORAGE_DIR: str = "./uploads"
+
+    # Which AWS data center region to use. us-west-1 = N. California.
+    AWS_REGION: str = "us-west-1"
+    # The bucket name is created by Terraform later (Phase 2).
+    S3_BUCKET_NAME: str = ""
+    # How long a download link stays valid. 5 minutes: long enough to
+    # click, short enough that a leaked link soon becomes useless.
+    S3_PRESIGNED_URL_EXPIRE_SECONDS: int = 300
+
+    # NOTICE: there is NO AWS_ACCESS_KEY / AWS_SECRET_KEY here.
+    # boto3 finds credentials by itself (the "credential chain"):
+    #   on your laptop → ~/.aws/credentials (from `aws configure`)
+    #   on AWS (ECS)   → the IAM role attached to the container
+    # Keys never live in code or .env. That is the AWS best practice.
+
+    # Upload rules. Medical files can be large, but not unlimited.
+    MAX_UPLOAD_MB: int = 10
+
     class Config:
         # Tells Pydantic: "read from this file if environment variables
         # aren't set directly". This is how local development works.

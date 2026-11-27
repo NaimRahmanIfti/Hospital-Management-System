@@ -163,6 +163,13 @@ def update_invoice(
         inv = invoice_service.get_invoice(db, invoice_id)
         if c(int, inv.patient_id) != c(int, patient.id):
             raise HTTPException(status_code=403, detail='You can only pay your own invoices')
+        # ALLOW-LIST: a patient may send ONLY the "status" field.
+        # Checking just data.status was not enough: {"discount": "150.00"}
+        # has status=None, slipped through, and wiped out the bill.
+        # exclude_unset=True → only the fields the client actually sent.
+        sent_fields = set(data.model_dump(exclude_unset=True).keys())
+        if sent_fields - {"status"}:
+            raise HTTPException(status_code=403, detail='Patients can only mark invoices as paid')
         if data.status not in [None, PS.paid]:
             raise HTTPException(status_code=403, detail='Patients can only mark invoices as paid')
     return invoice_service.update_invoice(db, invoice_id, data)
