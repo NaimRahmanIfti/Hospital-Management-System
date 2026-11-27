@@ -18,3 +18,10 @@ uploads/
 # Test coverage output
 .coverage
 htmlcov/
+
+# All environment files (they can hold secrets). Only examples are committed.
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
