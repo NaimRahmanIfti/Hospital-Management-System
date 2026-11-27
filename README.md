@@ -96,7 +96,7 @@ uvicorn main:app --reload                          # → http://localhost:8000/d
 # Frontend (in a second terminal)
 cd frontend
 npm install
-echo "VITE_API_URL=http://localhost:8000" > .env.local
+cp .env.example .env.local                         # sets VITE_API_URL
 npm run dev                                        # → http://localhost:5173
 ```
 
